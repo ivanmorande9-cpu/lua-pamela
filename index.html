@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Lua Pâmela 💖</title>
+
+<style>
+
+body{
+    margin:0;
+    overflow:hidden;
+    background:black;
+    font-family:Arial,sans-serif;
+
+    touch-action:none;
+}
+
+canvas{
+    display:block;
+}
+
+#musicBtn{
+    position:absolute;
+    top:20px;
+    left:20px;
+    z-index:10;
+
+    padding:12px 18px;
+
+    border:none;
+    border-radius:14px;
+
+    background:rgba(255,255,255,0.08);
+
+    color:white;
+    font-size:14px;
+
+    cursor:pointer;
+
+    backdrop-filter:blur(12px);
+
+    transition:0.3s;
+}
+
+#musicBtn:hover{
+    transform:scale(1.05);
+    background:rgba(255,255,255,0.15);
+}
+
+#title{
+    position:absolute;
+    top:20px;
+    right:20px;
+
+    color:white;
+
+    z-index:10;
+
+    font-size:15px;
+
+    letter-spacing:2px;
+
+    opacity:0.8;
+}
+
+</style>
+</head>
+
+<body>
+
+<button id="musicBtn">
+▶ Play música
+</button>
+
+<div id="title">
+🌙 Lua Pâmela
+</div>
+
+<script type="module">
+
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+//////////////////////////////////////////////////////
+// 🌌 ESCENA
+//////////////////////////////////////////////////////
+
+const scene = new THREE.Scene();
+
+scene.fog = new THREE.FogExp2(
+    0x000000,
+    0.00045
+);
+
+const camera = new THREE.PerspectiveCamera(
+
+    75,
+
+    window.innerWidth /
+    window.innerHeight,
+
+    0.1,
+
+    7000
+);
+
+camera.position.z = 850;
+
+const renderer = new THREE.WebGLRenderer({
+
+    antialias:true
+
+});
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio,2)
+);
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+//////////////////////////////////////////////////////
+// 🎶 AUDIO
+//////////////////////////////////////////////////////
+
+const listener = new THREE.AudioListener();
+
+camera.add(listener);
+
+const sound = new THREE.Audio(listener);
+
+const audioLoader = new THREE.AudioLoader();
+
+let analyser;
+
+let isPlaying = false;
+
+audioLoader.load(
+
+    "those-eyes.mp3",
+
+    function(buffer){
+
+        sound.setBuffer(buffer);
+
+        sound.setLoop(true);
+
+        sound.setVolume(0.45);
+
+        analyser = new THREE.AudioAnalyser(
+            sound,
+            64
+        );
+    }
+);
+
+const btn =
+document.getElementById("musicBtn");
+
+btn.addEventListener("click", ()=>{
+
+    if(!isPlaying){
+
+        sound.play();
+
+        btn.innerText =
+        "⏸ Pausar música";
+
+    }else{
+
+        sound.pause();
+
+        btn.innerText =
+        "▶ Play música";
+    }
+
+    isPlaying = !isPlaying;
+});
+
+//////////////////////////////////////////////////////
+// 💡 LUCES
+//////////////////////////////////////////////////////
+
+const light =
+new THREE.DirectionalLight(
+    0xffffff,
+    2.5
+);
+
+light.position.set(
+    300,
+    200,
+    400
+);
+
+scene.add(light);
+
+const ambient =
+new THREE.AmbientLight(
+    0x444444,
+    0.8
+);
+
+scene.add(ambient);
+
+const moonLight =
+new THREE.PointLight(
+    0xffffff,
+    1.2,
+    2500
+);
+
+moonLight.position.set(
+    0,
+    0,
+    300
+);
+
+scene.add(moonLight);
+
+//////////////////////////////////////////////////////
+// 🌕 TEXTURAS
+//////////////////////////////////////////////////////
+
+const loader =
+new THREE.TextureLoader();
+
+const moonTexture = loader.load(
+"https://threejs.org/examples/textures/planets/moon_1024.jpg"
+);
+
+const moonBump = loader.load(
+"https://threejs.org/examples/textures/planets/moon_bump_1024.jpg"
+);
+
+//////////////////////////////////////////////////////
+// 🌕 LUNA
+//////////////////////////////////////////////////////
+
+const moonGeometry =
+new THREE.SphereGeometry(
+    120,
+    128,
+    128
+);
+
+const moonMaterial =
+new THREE.MeshStandardMaterial({
+
+    map: moonTexture,
+
+    bumpMap: moonBump,
+
+    bumpScale: 3,
+
+    roughness: 0.95,
+
+    metalness: 0
+});
+
+const moon =
+new THREE.Mesh(
+    moonGeometry,
+    moonMaterial
+);
+
+scene.add(moon);
+
+//////////////////////////////////////////////////////
+// 🖤 RELIEVE "PÂMELA"
+//////////////////////////////////////////////////////
+
+function createMoonRelief(text){
+
+    const canvas =
+    document.createElement("canvas");
+
+    const ctx =
+    canvas.getContext("2d");
+
+    canvas.width = 2048;
+    canvas.height = 1024;
+
+    //////////////////////////////////////////////////
+    // BASE
+    //////////////////////////////////////////////////
+
+    ctx.fillStyle = "#808080";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    //////////////////////////////////////////////////
+    // TEXTO
+    //////////////////////////////////////////////////
+
+    ctx.font =
+    "bold 170px Arial";
+
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#d8d8d8";
+
+    ctx.shadowColor = "#000000";
+
+    ctx.shadowBlur = 15;
+
+    ctx.shadowOffsetX = 5;
+
+    ctx.shadowOffsetY = 5;
+
+    ctx.fillText(
+        text,
+        canvas.width/2,
+        canvas.height/2 + 60
+    );
+
+    //////////////////////////////////////////////////
+    // TEXTURA
+    //////////////////////////////////////////////////
+
+    const reliefTexture =
+    new THREE.CanvasTexture(canvas);
+
+    reliefTexture.needsUpdate = true;
+
+    //////////////////////////////////////////////////
+    // MATERIAL FINAL
+    //////////////////////////////////////////////////
+
+    moon.material =
+    new THREE.MeshStandardMaterial({
+
+        map: moonTexture,
+
+        bumpMap: reliefTexture,
+
+        bumpScale: 2.8,
+
+        roughness: 0.95,
+
+        metalness: 0
+
+    });
+
+}
+
+createMoonRelief("Pâmela");
+
+//////////////////////////////////////////////////////
+// 💬 PALABRAS ORBITALES
+//////////////////////////////////////////////////////
+
+const palavras = [
+
+
+"💖 Meu amor",
+"✨ Minha vida",
+"🌙 Saudade",
+"💫 Eternidade",
+"🤍 Abraço",
+"💘 Carinho",
+"🌟 Alegria",
+"🔥 Paixão",
+"🌀 Minha doída",
+"🌙 mi lunita",
+"❤️ te amo muito",
+"🌌 você é meu universo",
+"💞 meu coração",
+"🌠 linda demais"
+];
+
+const words = [];
+
+function createWord(text){
+
+    const canvas =
+    document.createElement("canvas");
+
+    const ctx =
+    canvas.getContext("2d");
+
+    canvas.width = 1024;
+    canvas.height = 512;
+
+    ctx.fillStyle = "#ffffff";
+
+    ctx.font =
+    "bold 58px Arial";
+
+    ctx.textAlign = "center";
+
+    ctx.shadowColor = "#7db8ff";
+
+    ctx.shadowBlur = 10;
+
+    ctx.fillText(
+        text,
+        512,
+        280
+    );
+
+    const texture =
+    new THREE.CanvasTexture(canvas);
+
+    const sprite =
+    new THREE.Sprite(
+
+        new THREE.SpriteMaterial({
+
+            map:texture,
+
+            transparent:true
+
+        })
+
+    );
+
+    sprite.scale.set(
+        160,
+        80,
+        1
+    );
+
+    return sprite;
+}
+
+for(let i=0;i<140;i++){
+
+    const word = createWord(
+
+        palavras[
+        Math.floor(
+        Math.random()*palavras.length
+        )
+        ]
+
+    );
+
+    const r =
+    260 + Math.random()*260;
+
+    const t =
+    Math.random()*Math.PI*2;
+
+    const p =
+    Math.acos(
+    (Math.random()*2)-1
+    );
+
+    word.userData = {
+
+        t,
+        p,
+        r,
+
+        speed:
+        0.001 +
+        Math.random()*0.003
+    };
+
+    scene.add(word);
+
+    words.push(word);
+}
+
+//////////////////////////////////////////////////////
+// ⭐ ESTRELLAS
+//////////////////////////////////////////////////////
+
+const starsGeometry =
+new THREE.BufferGeometry();
+
+const starVertices = [];
+
+for(let i=0;i<5000;i++){
+
+    starVertices.push(
+
+        (Math.random()-0.5)*6000,
+
+        (Math.random()-0.5)*6000,
+
+        (Math.random()-0.5)*6000
+    );
+}
+
+starsGeometry.setAttribute(
+
+    "position",
+
+    new THREE.Float32BufferAttribute(
+        starVertices,
+        3
+    )
+);
+
+const stars =
+new THREE.Points(
+
+    starsGeometry,
+
+    new THREE.PointsMaterial({
+
+        size:2,
+
+        transparent:true,
+
+        opacity:0.9
+    })
+);
+
+scene.add(stars);
+
+//////////////////////////////////////////////////////
+// ☄️ METEORITOS
+//////////////////////////////////////////////////////
+
+const meteors = [];
+
+function createMeteor(){
+
+    const geometry =
+    new THREE.SphereGeometry(
+        2,
+        8,
+        8
+    );
+
+    const material =
+    new THREE.MeshBasicMaterial({
+
+        color:0xffffff
+    });
+
+    const meteor =
+    new THREE.Mesh(
+        geometry,
+        material
+    );
+
+    meteor.position.set(
+
+        (Math.random()-0.5)*3000,
+
+        1200 + Math.random()*1000,
+
+        (Math.random()-0.5)*3000
+    );
+
+    meteor.userData = {
+
+        speedX:
+        -10 - Math.random()*15,
+
+        speedY:
+        -5 - Math.random()*8
+    };
+
+    scene.add(meteor);
+
+    meteors.push(meteor);
+}
+
+setInterval(()=>{
+
+    createMeteor();
+
+},1800);
+
+//////////////////////////////////////////////////////
+// 🖱️ CONTROLES PC
+//////////////////////////////////////////////////////
+
+let dragging = false;
+
+let px = 0;
+let py = 0;
+
+window.addEventListener("mousedown", e=>{
+
+    dragging = true;
+
+    px = e.clientX;
+
+    py = e.clientY;
+});
+
+window.addEventListener("mouseup", ()=>{
+
+    dragging = false;
+
+});
+
+window.addEventListener("mousemove", e=>{
+
+    if(!dragging) return;
+
+    scene.rotation.y +=
+    (e.clientX - px)*0.005;
+
+    scene.rotation.x +=
+    (e.clientY - py)*0.005;
+
+    px = e.clientX;
+
+    py = e.clientY;
+});
+
+//////////////////////////////////////////////////////
+// 📱 TOUCH CELULAR
+//////////////////////////////////////////////////////
+
+window.addEventListener(
+"touchstart",
+e=>{
+
+    px = e.touches[0].clientX;
+
+    py = e.touches[0].clientY;
+
+}
+);
+
+window.addEventListener(
+"touchmove",
+e=>{
+
+    const tx =
+    e.touches[0].clientX;
+
+    const ty =
+    e.touches[0].clientY;
+
+    scene.rotation.y +=
+    (tx - px)*0.005;
+
+    scene.rotation.x +=
+    (ty - py)*0.005;
+
+    px = tx;
+
+    py = ty;
+
+},
+{ passive:false }
+);
+
+//////////////////////////////////////////////////////
+// 🔍 ZOOM
+//////////////////////////////////////////////////////
+
+window.addEventListener("wheel", e=>{
+
+    camera.position.z +=
+    e.deltaY * 0.5;
+
+    camera.position.z = Math.max(
+
+        350,
+
+        Math.min(
+            1800,
+            camera.position.z
+        )
+    );
+});
+
+//////////////////////////////////////////////////////
+// 📱 RESPONSIVE
+//////////////////////////////////////////////////////
+
+window.addEventListener(
+"resize",
+()=>{
+
+    camera.aspect =
+    window.innerWidth /
+    window.innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+
+        window.innerWidth,
+
+        window.innerHeight
+    );
+
+});
+
+//////////////////////////////////////////////////////
+// 🎬 ANIMACIÓN
+//////////////////////////////////////////////////////
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    //////////////////////////////////////////////////
+    // 🎶 REACCIÓN MÚSICA
+    //////////////////////////////////////////////////
+
+    let pulse = 1;
+
+    if(analyser){
+
+        let data =
+        analyser.getAverageFrequency();
+
+        pulse =
+        1 + data * 0.0005;
+    }
+
+    moon.scale.set(
+        pulse,
+        pulse,
+        pulse
+    );
+
+    //////////////////////////////////////////////////
+    // 🌕 ROTACIÓN
+    //////////////////////////////////////////////////
+
+    moon.rotation.y += 0.0015;
+
+    //////////////////////////////////////////////////
+    // 💬 PALABRAS
+    //////////////////////////////////////////////////
+
+    words.forEach(w=>{
+
+        w.userData.t +=
+        w.userData.speed;
+
+        const {t,p,r} =
+        w.userData;
+
+        w.position.set(
+
+            r*Math.sin(p)*Math.cos(t),
+
+            r*Math.sin(p)*Math.sin(t),
+
+            r*Math.cos(p)
+
+        );
+
+        w.lookAt(
+            camera.position
+        );
+
+    });
+
+    //////////////////////////////////////////////////
+    // ⭐ ESTRELLAS
+    //////////////////////////////////////////////////
+
+    stars.rotation.y +=
+    0.00015;
+
+    //////////////////////////////////////////////////
+    // ☄️ METEORITOS
+    //////////////////////////////////////////////////
+
+    for(
+        let i=meteors.length-1;
+        i>=0;
+        i--
+    ){
+
+        const m = meteors[i];
+
+        m.position.x +=
+        m.userData.speedX;
+
+        m.position.y +=
+        m.userData.speedY;
+
+        if(m.position.y < -2000){
+
+            scene.remove(m);
+
+            meteors.splice(i,1);
+        }
+    }
+
+    //////////////////////////////////////////////////
+    // 🎥 RENDER
+    //////////////////////////////////////////////////
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
